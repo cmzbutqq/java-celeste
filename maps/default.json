@@ -2,16 +2,22 @@
   "name": "简单地图",
   "description": "适合新手的简单地图",
   "platforms": [
-    {"x": 200, "y": 450, "width": 100, "height": 20, "comment": "起始平台"},
-    {"x": 400, "y": 350, "width": 100, "height": 20, "comment": "中间平台"},
-    {"x": 600, "y": 250, "width": 100, "height": 20, "comment": "终点平台"}
+    {"x": 200, "y": 950, "width": 100, "height": 20, "comment": "起始平台"},
+    {"x": 500, "y": 850, "width": 100, "height": 20, "comment": "中间平台"},
+    {"x": 800, "y": 750, "width": 100, "height": 20, "comment": "第二平台"},
+    {"x": 1200, "y": 650, "width": 100, "height": 20, "comment": "第三平台"},
+    {"x": 1600, "y": 550, "width": 100, "height": 20, "comment": "终点平台"}
   ],
   "solidBlocks": [
-    {"x": 300, "y": 400, "width": 30, "height": 150, "comment": "地面障碍1"},
-    {"x": 500, "y": 340, "width": 40, "height": 210, "comment": "地面障碍2"}
+    {"x": 400, "y": 900, "width": 30, "height": 150, "comment": "地面障碍1"},
+    {"x": 700, "y": 800, "width": 40, "height": 210, "comment": "地面障碍2"},
+    {"x": 1000, "y": 700, "width": 50, "height": 180, "comment": "地面障碍3"},
+    {"x": 1400, "y": 600, "width": 60, "height": 250, "comment": "地面障碍4"}
   ],
   "spikes": [
-    {"x": 320, "y": 520, "width": 15, "height": 30, "comment": "地面尖刺1"},
-    {"x": 520, "y": 520, "width": 15, "height": 30, "comment": "地面尖刺2"}
+    {"x": 420, "y": 1020, "width": 15, "height": 30, "comment": "地面尖刺1"},
+    {"x": 720, "y": 1020, "width": 15, "height": 30, "comment": "地面尖刺2"},
+    {"x": 1020, "y": 1020, "width": 15, "height": 30, "comment": "地面尖刺3"},
+    {"x": 1420, "y": 1020, "width": 15, "height": 30, "comment": "地面尖刺4"}
   ]
 }

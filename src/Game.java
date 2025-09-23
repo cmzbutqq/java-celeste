@@ -14,8 +14,8 @@ import javax.swing.SwingUtilities;
  * 游戏主类 - 横版跳跃游戏
  */
 public class Game extends JFrame implements KeyListener {
-    private static final int WINDOW_WIDTH = 800;
-    private static final int WINDOW_HEIGHT = 600;
+    private static final int WINDOW_WIDTH = 1920;
+    private static final int WINDOW_HEIGHT = 1080;
     private static final int FPS = 60;
     
     private final GamePanel gamePanel;
@@ -40,14 +40,14 @@ public class Game extends JFrame implements KeyListener {
         setLocationRelativeTo(null);
         
         // 初始化游戏对象
-        player = new Player(100, 400);
+        player = new Player(100, 900);
         
         // 加载地图设计
         loadMapFromJson("maps/default.json");
         player.setPlatforms(platforms);
         player.setSolidBlocks(solidBlocks);
         player.setSpikes(spikes);
-        player.setRespawnPoint(100, 400); // 设置重生点
+        player.setRespawnPoint(100, 900); // 设置重生点
         
         // 添加键盘监听
         addKeyListener(this);

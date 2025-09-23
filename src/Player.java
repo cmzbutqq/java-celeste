@@ -11,10 +11,10 @@ public class Player {
     private static final int PLAYER_WIDTH = 30;
     private static final int PLAYER_HEIGHT = 40;
     private static final double GRAVITY = 0.5;
-    private static final double FAST_FALL_GRAVITY = 1.0; // 加速下落时的重力（2倍）
+    private static final double FAST_FALL_GRAVITY = 2.0; // 加速下落时的重力
     private static final double JUMP_STRENGTH = -12;
     private static final double MOVE_SPEED = 3;
-    private static final int GROUND_Y = 550; // 地面Y坐标
+    private static final int GROUND_Y = 1030; // 地面Y坐标 (1080 - 50)
     
     private double x, y;
     private double velocityX, velocityY;
@@ -205,7 +205,7 @@ public class Player {
         
         // 边界检测
         if (x < 0) x = 0;
-        if (x > 800 - PLAYER_WIDTH) x = 800 - PLAYER_WIDTH;
+        if (x > 1920 - PLAYER_WIDTH) x = 1920 - PLAYER_WIDTH;
         
         // 落地体力条恢复满（地面、平台、实心物块）
         if (onGround) {
@@ -235,8 +235,6 @@ public class Player {
         for (SolidBlock block : solidBlocks) {
             if (block.checkCollision(x, y, PLAYER_WIDTH, PLAYER_HEIGHT)) {
                 // 计算碰撞方向并调整位置
-                double overlapX = 0;
-                double overlapY = 0;
                 
                 // 计算重叠量
                 double leftOverlap = (x + PLAYER_WIDTH) - block.getX();
