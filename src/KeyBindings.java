@@ -75,44 +75,21 @@ public class KeyBindings {
     }
     
     /**
-     * 检查按键是否绑定到指定动作
-     * @param keyCode 按键码
-     * @param action 动作名称
-     * @return 是否绑定
-     */
-    public static boolean isKeyBoundToAction(int keyCode, String action) {
-        List<Integer> keys = actionToKeys.get(action);
-        return keys != null && keys.contains(keyCode);
-    }
-    
-    /**
-     * 检查按键是否绑定到移动动作
-     * @param keyCode 按键码
-     * @return 是否绑定到移动
-     */
-    public static boolean isMoveKey(int keyCode) {
-        String action = getActionForKey(keyCode);
-        return action != null && (action.equals("MOVE_LEFT") || action.equals("MOVE_RIGHT") || 
-                                 action.equals("MOVE_UP") || action.equals("MOVE_DOWN"));
-    }
-    
-    /**
      * 检查按键是否绑定到跳跃动作
-     * @param keyCode 按键码
-     * @return 是否绑定到跳跃
      */
     public static boolean isJumpKey(int keyCode) {
         return "JUMP".equals(getActionForKey(keyCode));
     }
     
+    /**
+     * 检查按键是否绑定到冲刺动作
+     */
     public static boolean isDashKey(int keyCode) {
         return "DASH".equals(getActionForKey(keyCode));
     }
     
     /**
      * 检查按键是否绑定到左移动作
-     * @param keyCode 按键码
-     * @return 是否绑定到左移
      */
     public static boolean isLeftMoveKey(int keyCode) {
         return "MOVE_LEFT".equals(getActionForKey(keyCode));
@@ -120,8 +97,6 @@ public class KeyBindings {
     
     /**
      * 检查按键是否绑定到右移动作
-     * @param keyCode 按键码
-     * @return 是否绑定到右移
      */
     public static boolean isRightMoveKey(int keyCode) {
         return "MOVE_RIGHT".equals(getActionForKey(keyCode));
@@ -129,8 +104,6 @@ public class KeyBindings {
     
     /**
      * 检查按键是否绑定到上移动作
-     * @param keyCode 按键码
-     * @return 是否绑定到上移
      */
     public static boolean isUpMoveKey(int keyCode) {
         return "MOVE_UP".equals(getActionForKey(keyCode));
@@ -138,84 +111,11 @@ public class KeyBindings {
     
     /**
      * 检查按键是否绑定到下移动作
-     * @param keyCode 按键码
-     * @return 是否绑定到下移
      */
     public static boolean isDownMoveKey(int keyCode) {
         return "MOVE_DOWN".equals(getActionForKey(keyCode));
     }
     
-    /**
-     * 添加新的按键绑定
-     * @param action 动作名称
-     * @param keyCode 按键码
-     */
-    public static void addKeyBinding(String action, int keyCode) {
-        actionToKeys.computeIfAbsent(action, k -> new ArrayList<>()).add(keyCode);
-        keyToAction.put(keyCode, action);
-    }
-    
-    /**
-     * 移除按键绑定
-     * @param action 动作名称
-     * @param keyCode 按键码
-     */
-    public static void removeKeyBinding(String action, int keyCode) {
-        List<Integer> keys = actionToKeys.get(action);
-        if (keys != null) {
-            keys.removeIf(k -> k.equals(keyCode));
-            if (keys.isEmpty()) {
-                actionToKeys.remove(action);
-            }
-        }
-        keyToAction.remove(keyCode);
-    }
-    
-    /**
-     * 移除整个指令的所有按键绑定
-     * @param action 动作名称
-     */
-    public static void removeAction(String action) {
-        List<Integer> keys = actionToKeys.remove(action);
-        if (keys != null) {
-            for (Integer key : keys) {
-                keyToAction.remove(key);
-            }
-        }
-    }
-    
-    /**
-     * 设置指令的按键列表（替换现有按键）
-     * @param action 动作名称
-     * @param keyCodes 新的按键列表
-     */
-    public static void setKeysForAction(String action, List<Integer> keyCodes) {
-        // 移除旧的按键绑定
-        List<Integer> oldKeys = actionToKeys.get(action);
-        if (oldKeys != null) {
-            for (Integer key : oldKeys) {
-                keyToAction.remove(key);
-            }
-        }
-        
-        // 设置新的按键绑定
-        actionToKeys.put(action, new ArrayList<>(keyCodes));
-        for (Integer key : keyCodes) {
-            keyToAction.put(key, action);
-        }
-    }
-    
-    /**
-     * 获取所有按键绑定
-     * @return 指令到按键列表的映射表
-     */
-    public static Map<String, List<Integer>> getAllKeyBindings() {
-        Map<String, List<Integer>> result = new HashMap<>();
-        for (Map.Entry<String, List<Integer>> entry : actionToKeys.entrySet()) {
-            result.put(entry.getKey(), new ArrayList<>(entry.getValue()));
-        }
-        return result;
-    }
     
     /**
      * 打印当前按键绑定配置

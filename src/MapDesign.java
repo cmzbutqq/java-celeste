@@ -57,35 +57,6 @@ public class MapDesign {
             return this;
         }
         
-        /**
-         * 批量添加平台
-         */
-        public MapBuilder addPlatforms(int[][] platformData) {
-            for (int[] data : platformData) {
-                addPlatform(data[0], data[1], data[2], data[3]);
-            }
-            return this;
-        }
-        
-        /**
-         * 批量添加实心物块
-         */
-        public MapBuilder addSolidBlocks(int[][] blockData) {
-            for (int[] data : blockData) {
-                addSolidBlock(data[0], data[1], data[2], data[3]);
-            }
-            return this;
-        }
-        
-        /**
-         * 批量添加尖刺
-         */
-        public MapBuilder addSpikes(int[][] spikeData) {
-            for (int[] data : spikeData) {
-                addSpike(data[0], data[1], data[2], data[3]);
-            }
-            return this;
-        }
         
         /**
          * 构建地图
@@ -103,20 +74,6 @@ public class MapDesign {
         return JsonMapLoader.loadMapFromJsonOrDefault(configPath);
     }
     
-    /**
-     * 从JSON配置文件创建地图（带异常处理）
-     */
-    public static MapData createMapFromConfig(String configPath, boolean useDefaultOnError) {
-        if (useDefaultOnError) {
-            return JsonMapLoader.loadMapFromJsonOrDefault(configPath);
-        } else {
-            try {
-                return JsonMapLoader.loadMapFromJson(configPath);
-            } catch (Exception e) {
-                throw new RuntimeException("加载地图失败: " + e.getMessage(), e);
-            }
-        }
-    }
     
     /**
      * 创建空地图

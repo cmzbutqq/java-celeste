@@ -121,27 +121,4 @@ public class JsonMapLoader {
         }
     }
     
-    /**
-     * 验证JSON文件格式
-     */
-    public static boolean validateJsonFile(String filePath) {
-        try {
-            MapConfig config = objectMapper.readValue(new File(filePath), MapConfig.class);
-            return config.name != null && !config.name.isEmpty();
-        } catch (IOException e) {
-            return false;
-        }
-    }
-    
-    /**
-     * 列出所有可用的地图文件
-     */
-    public static String[] listAvailableMaps(String mapsDirectory) {
-        File dir = new File(mapsDirectory);
-        if (!dir.exists() || !dir.isDirectory()) {
-            return new String[0];
-        }
-        
-        return dir.list((d, name) -> name.toLowerCase().endsWith(".json"));
-    }
 }
