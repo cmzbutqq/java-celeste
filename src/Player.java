@@ -331,7 +331,14 @@ public class Player {
             return;
         }
         
-        // 2. 贴墙且非攀爬时：如果有向墙壁移动，会贴着墙壁匀速缓慢下落
+        // 2. 如果正在攀爬但不贴墙了，停止攀爬
+        if (isClimbing && !isTouchingWall) {
+            isClimbing = false;
+            System.out.println("离开墙壁，停止攀爬");
+            return;
+        }
+        
+        // 3. 贴墙且非攀爬时：如果有向墙壁移动，会贴着墙壁匀速缓慢下落
         if (!isClimbing) {
             // 检查是否向墙壁移动
             boolean movingTowardsWall = (wallDirection == 1 && rightPressed) || (wallDirection == -1 && leftPressed);
@@ -349,7 +356,7 @@ public class Player {
             }
         }
         
-        // 3. 贴墙且攀爬时：可以上下移动
+        // 4. 贴墙且攀爬时：可以上下移动
         if (isClimbing) {
             // 处理攀爬时的上下移动
             if (upPressed && !downPressed) {
