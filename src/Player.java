@@ -11,6 +11,7 @@ public class Player {
     private static final int PLAYER_WIDTH = 30;
     private static final int PLAYER_HEIGHT = 40;
     private static final double GRAVITY = 0.5;
+    private static final double FAST_FALL_GRAVITY = 1.0; // 加速下落时的重力（2倍）
     private static final double JUMP_STRENGTH = -12;
     private static final double MOVE_SPEED = 3;
     private static final int GROUND_Y = 550; // 地面Y坐标
@@ -18,7 +19,7 @@ public class Player {
     private double x, y;
     private double velocityX, velocityY;
     private boolean onGround;
-    private boolean leftPressed, rightPressed, upPressed, downPressed, jumpPressed, dashPressed;
+    private boolean leftPressed, rightPressed, upPressed, downPressed, jumpPressed, dashPressed, climbPressed;
     private SolidBlock[] solidBlocks; // 实心物块数组
     private Platform[] platforms; // 平台数组
     private Spike[] spikes; // 尖刺数组
@@ -38,6 +39,20 @@ public class Player {
     private static final int MAX_DASH_COUNT = 2; // 最大冲刺次数
     private double dashVelocityX = 0, dashVelocityY = 0; // 冲刺速度分量
     private Color dashColor; // 冲刺时的颜色（基于冲刺前的状态）
+    
+    // 攀爬相关
+    private boolean isClimbing = false; // 是否正在攀爬
+    private boolean isTouchingWall = false; // 是否贴着墙壁
+    private int wallDirection = 0; // 墙壁方向：-1左墙，1右墙，0无墙
+    private double stamina = 100.0; // 体力条（0-100）
+    private static final double MAX_STAMINA = 100.0; // 最大体力
+    private static final double STAMINA_DRAIN_RATE = 0.4;
+    private static final double WALL_SLIDE_SPEED = 1.0; // 贴墙下滑速度
+    private static final double CLIMB_MOVE_SPEED = 2.0; // 攀爬移动速度
+    
+    // 跳跃冷却相关
+    private int jumpCooldownTimer = 0; // 跳跃冷却计时器
+    private static final int JUMP_COOLDOWN_DURATION = 10; // 跳跃冷却持续帧数（约0.17秒）
     
     public Player(double x, double y) {
         this.x = x;
@@ -80,7 +95,13 @@ public class Player {
             return;
         }
         
-        // 处理冲刺
+        // 检查墙壁碰撞
+        checkWallCollision();
+        
+        // 处理攀爬逻辑
+        handleClimbing(deltaTime);
+        
+        // 处理冲刺（冲刺优先级高于攀爬）
         if (dashPressed && dashCount > 0 && !isDashing) {
             startDash();
         }
@@ -97,30 +118,69 @@ public class Player {
             }
         } else {
             // 正常移动逻辑
-            // 处理水平移动
-            if (leftPressed && !rightPressed) {
-                velocityX = -MOVE_SPEED;
-            } else if (rightPressed && !leftPressed) {
-                velocityX = MOVE_SPEED;
-            } else {
-                velocityX = 0;
+            // 处理水平移动（攀爬时屏蔽水平移动）
+            if (!isClimbing) {
+                if (leftPressed && !rightPressed) {
+                    velocityX = -MOVE_SPEED;
+                } else if (rightPressed && !leftPressed) {
+                    velocityX = MOVE_SPEED;
+                } else {
+                    velocityX = 0;
+                }
             }
             
-            // 处理跳跃
-            if (jumpPressed && onGround) {
-                velocityY = JUMP_STRENGTH;
+            // 处理跳跃（攀爬时也可以跳跃）
+            if (jumpPressed && (onGround || isClimbing) && jumpCooldownTimer <= 0) {
+                if (isClimbing) {
+                    // 攀爬跳跃：根据墙壁方向和移动方向决定跳跃方向
+                    double jumpX = 0, jumpY = JUMP_STRENGTH;
+                    
+                    // 检查是否向外移动
+                    boolean movingAwayFromWall = (wallDirection == 1 && leftPressed) || (wallDirection == -1 && rightPressed);
+                    
+                    if (movingAwayFromWall) {
+                        // 向外移动时，向斜上方跳跃
+                        jumpX = wallDirection == 1 ? -MOVE_SPEED * 2 : MOVE_SPEED * 2; // 水平速度是移动速度的2倍
+                        jumpY = JUMP_STRENGTH * 0.8; // 垂直速度稍微减少
+                        System.out.println("攀爬斜跳！方向: (" + jumpX + ", " + jumpY + ")");
+                    } else {
+                        // 没有向外移动时，传统向上跳跃
+                        System.out.println("攀爬跳跃！");
+                    }
+                    
+                    velocityX = jumpX;
+                    velocityY = jumpY;
+                    isClimbing = false; // 跳跃时停止攀爬
+                } else {
+                    // 普通跳跃
+                    velocityY = JUMP_STRENGTH;
+                }
+                
                 onGround = false;
+                jumpCooldownTimer = JUMP_COOLDOWN_DURATION; // 开始冷却
             }
             
-            // 应用重力
-            if (!onGround) {
-                velocityY += GRAVITY;
+            // 应用重力（攀爬时不应用重力）
+            if (!onGround && !isClimbing) {
+                // 检查是否加速下落（排除冲刺、攀墙、沿墙滑落状态）
+                if (downPressed && velocityY > 0 && !isDashing && !isTouchingWall) {
+                    // 自由落体时按S键，重力翻倍
+                    velocityY += FAST_FALL_GRAVITY;
+                } else {
+                    // 正常重力
+                    velocityY += GRAVITY;
+                }
             }
         }
         
         // 更新位置
         x += velocityX;
         y += velocityY;
+        
+        // 更新跳跃冷却
+        if (jumpCooldownTimer > 0) {
+            jumpCooldownTimer--;
+        }
         
         // 先重置onGround状态，然后通过碰撞检测来设置
         onGround = false;
@@ -146,6 +206,12 @@ public class Player {
         // 边界检测
         if (x < 0) x = 0;
         if (x > 800 - PLAYER_WIDTH) x = 800 - PLAYER_WIDTH;
+        
+        // 落地体力条恢复满（地面、平台、实心物块）
+        if (onGround) {
+            stamina = MAX_STAMINA;
+            isClimbing = false; // 落地时停止攀爬
+        }
     }
     
     private void checkPlatformCollision() {
@@ -215,6 +281,102 @@ public class Player {
         }
     }
     
+    /**
+     * 检查是否贴着墙壁
+     */
+    private void checkWallCollision() {
+        isTouchingWall = false;
+        wallDirection = 0;
+        
+        // 检查实心物块的墙壁碰撞
+        for (SolidBlock block : solidBlocks) {
+            if (isTouchingWall(block)) {
+                isTouchingWall = true;
+                break;
+            }
+        }
+    }
+    
+    /**
+     * 检查是否贴着特定实心物块
+     */
+    private boolean isTouchingWall(SolidBlock block) {
+        // 检查左墙碰撞（玩家右边缘贴着物块左边缘）
+        if (x + PLAYER_WIDTH >= block.getX() && 
+            x + PLAYER_WIDTH <= block.getX() + 5 && // 5像素的容错范围
+            y < block.getY() + block.getHeight() && 
+            y + PLAYER_HEIGHT > block.getY()) {
+            wallDirection = 1; // 右墙
+            return true;
+        }
+        
+        // 检查右墙碰撞（玩家左边缘贴着物块右边缘）
+        if (x <= block.getX() + block.getWidth() && 
+            x >= block.getX() + block.getWidth() - 5 && // 5像素的容错范围
+            y < block.getY() + block.getHeight() && 
+            y + PLAYER_HEIGHT > block.getY()) {
+            wallDirection = -1; // 左墙
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * 处理攀爬逻辑
+     */
+    private void handleClimbing(double deltaTime) {
+        // 1. 不贴墙时：攀爬无用（但正在攀爬时例外）
+        if (!isTouchingWall && !isClimbing) {
+            return;
+        }
+        
+        // 2. 贴墙且非攀爬时：如果有向墙壁移动，会贴着墙壁匀速缓慢下落
+        if (!isClimbing) {
+            // 检查是否向墙壁移动
+            boolean movingTowardsWall = (wallDirection == 1 && rightPressed) || (wallDirection == -1 && leftPressed);
+            
+            if (movingTowardsWall) {
+                // 贴着墙壁匀速缓慢下落
+                velocityY = WALL_SLIDE_SPEED;
+                velocityX = 0; // 停止水平移动
+            }
+            // 如果没有向墙壁移动，则自由下落（重力会处理）
+            
+            // 检查是否可以开始攀爬（每帧都检查）
+            if (climbPressed && stamina > 0) {
+                isClimbing = true;
+            }
+        }
+        
+        // 3. 贴墙且攀爬时：可以上下移动
+        if (isClimbing) {
+            // 处理攀爬时的上下移动
+            if (upPressed && !downPressed) {
+                // 向上攀爬
+                velocityY = -CLIMB_MOVE_SPEED;
+                velocityX = 0; // 停止水平移动
+            } else if (downPressed && !upPressed) {
+                // 向下攀爬
+                velocityY = CLIMB_MOVE_SPEED;
+                velocityX = 0; // 停止水平移动
+            } else {
+                // 没有按上下键，静止在墙上
+                velocityY = 0;
+                velocityX = 0;
+            }
+            
+            // 消耗体力条
+            stamina -= STAMINA_DRAIN_RATE * deltaTime;
+            if (stamina <= 0) {
+                stamina = 0;
+                isClimbing = false; // 体力耗尽，停止攀爬
+                System.out.println("体力耗尽！停止攀爬");
+            }
+        }
+        
+    }
+    
     private void die() {
         isDead = true;
         deathAnimationTimer = 0;
@@ -232,8 +394,10 @@ public class Player {
         velocityY = 0;
         onGround = false;
         dashCount = MAX_DASH_COUNT; // 重生时恢复所有冲刺次数
+        stamina = MAX_STAMINA; // 重生时恢复体力
         isDashing = false;
         dashTimer = 0;
+        isClimbing = false; // 重生时停止攀爬
         System.out.println("玩家重生！");
     }
     
@@ -252,6 +416,7 @@ public class Player {
         isDashing = true;
         dashTimer = 0;
         dashCount--; // 消耗一次冲刺机会
+        isClimbing = false; // 冲刺时停止攀爬
         
         // 根据当前按键状态确定冲刺方向
         double dashX = 0, dashY = 0;
@@ -301,6 +466,8 @@ public class Player {
             jumpPressed = true;
         } else if (KeyBindings.isDashKey(keyCode)) {
             dashPressed = true;
+        } else if (KeyBindings.isClimbKey(keyCode)) {
+            climbPressed = true;
         }
     }
     
@@ -319,6 +486,10 @@ public class Player {
             jumpPressed = false;
         } else if (KeyBindings.isDashKey(keyCode)) {
             dashPressed = false;
+        } else if (KeyBindings.isClimbKey(keyCode)) {
+            climbPressed = false;
+            // 松开攀爬键时停止攀爬
+            isClimbing = false;
         }
     }
     
@@ -331,6 +502,9 @@ public class Player {
         } else {
             renderAlivePlayer(g);
         }
+        
+        // 绘制体力条（在所有状态下都可能需要显示）
+        renderStaminaBar(g);
     }
     
     private void renderAlivePlayer(Graphics g) {
@@ -357,15 +531,20 @@ public class Player {
             headColor = new Color(100, 150, 255); // 蓝色
         }
         
+        // 检查是否加速下落（自由落体时按S键，排除冲刺、攀墙、沿墙滑落状态）
+        boolean isFastFalling = !onGround && !isDashing && !isClimbing && !isTouchingWall && downPressed && velocityY > 0;
+        int renderWidth = isFastFalling ? PLAYER_WIDTH / 2 : PLAYER_WIDTH; // 加速下落时宽度减半
+        int renderX = isFastFalling ? (int)x + PLAYER_WIDTH / 4 : (int)x; // 居中显示
+        
         // 绘制玩家身体（碰撞箱下半部分）
         g.setColor(bodyColor);
-        g.fillRect((int)x, (int)y + PLAYER_HEIGHT / 2, PLAYER_WIDTH, PLAYER_HEIGHT / 2);
+        g.fillRect(renderX, (int)y + PLAYER_HEIGHT / 2, renderWidth, PLAYER_HEIGHT / 2);
         
         // 绘制玩家头部（碰撞箱上半部分）
         g.setColor(headColor);
-        g.fillRect((int)x, (int)y, PLAYER_WIDTH, PLAYER_HEIGHT / 2);
+        g.fillRect(renderX, (int)y, renderWidth, PLAYER_HEIGHT / 2);
         
-        // 绘制边框
+        // 绘制边框（始终使用完整碰撞箱）
         g.setColor(Color.BLACK);
         g.drawRect((int)x, (int)y, PLAYER_WIDTH, PLAYER_HEIGHT); // 整体碰撞箱边框
     }
@@ -419,10 +598,48 @@ public class Player {
         g.drawRect((int)x, (int)y, PLAYER_WIDTH, PLAYER_HEIGHT); // 整体碰撞箱边框
     }
     
+    /**
+     * 绘制体力条
+     */
+    private void renderStaminaBar(Graphics g) {
+        if (isTouchingWall || isClimbing) {
+            // 体力条位置（玩家上方）
+            int barX = (int)x - 10;
+            int barY = (int)y - 15;
+            int barWidth = PLAYER_WIDTH + 20;
+            int barHeight = 6;
+            
+            // 背景（黑色）
+            g.setColor(Color.BLACK);
+            g.fillRect(barX, barY, barWidth, barHeight);
+            
+            // 体力条（绿色到红色渐变）
+            int staminaWidth = (int)(barWidth * stamina / MAX_STAMINA);
+            if (stamina > 50) {
+                g.setColor(new Color(0, 255, 0)); // 绿色
+            } else if (stamina > 25) {
+                g.setColor(new Color(255, 255, 0)); // 黄色
+            } else {
+                g.setColor(new Color(255, 0, 0)); // 红色
+            }
+            g.fillRect(barX + 1, barY + 1, staminaWidth - 2, barHeight - 2);
+            
+            // 体力数值
+            g.setColor(Color.WHITE);
+            g.setFont(g.getFont().deriveFont(10f));
+            g.drawString((int)stamina + "/" + (int)MAX_STAMINA, barX, barY - 2);
+        }
+    }
+    
     public double getX() { return x; }
     public double getY() { return y; }
     public double getVelocityX() { return velocityX; }
     public double getVelocityY() { return velocityY; }
     public boolean isOnGround() { return onGround; }
+    public boolean isDashing() { return isDashing; }
+    public int getDashCount() { return dashCount; }
+    public boolean isClimbing() { return isClimbing; }
+    public boolean isTouchingWall() { return isTouchingWall; }
+    public double getStamina() { return stamina; }
 }
 

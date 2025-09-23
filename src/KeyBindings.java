@@ -34,6 +34,9 @@ public class KeyBindings {
         // 冲刺指令
         actionToKeys.put("DASH", Arrays.asList(KeyEvent.VK_J));
         
+        // 攀爬指令
+        actionToKeys.put("CLIMB", Arrays.asList(KeyEvent.VK_L));
+        
         // 可以添加更多指令
         // actionToKeys.put("PAUSE", Arrays.asList(KeyEvent.VK_ESCAPE));
         // actionToKeys.put("RESTART", Arrays.asList(KeyEvent.VK_R));
@@ -86,6 +89,13 @@ public class KeyBindings {
      */
     public static boolean isDashKey(int keyCode) {
         return "DASH".equals(getActionForKey(keyCode));
+    }
+    
+    /**
+     * 检查按键是否绑定到攀爬动作
+     */
+    public static boolean isClimbKey(int keyCode) {
+        return "CLIMB".equals(getActionForKey(keyCode));
     }
     
     /**
@@ -153,6 +163,7 @@ public class KeyBindings {
             case "MOVE_DOWN": return "下移";
             case "JUMP": return "跳跃";
             case "DASH": return "冲刺";
+            case "CLIMB": return "攀爬";
             case "PAUSE": return "暂停";
             case "RESTART": return "重启";
             default: return action;
