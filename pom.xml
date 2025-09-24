@@ -47,6 +47,26 @@
                 <configuration>
                     <mainClass>Game</mainClass>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>run-game</id>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>Game</mainClass>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>run-editor</id>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>MapEditor</mainClass>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
