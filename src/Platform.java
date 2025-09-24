@@ -6,18 +6,13 @@ import java.awt.Graphics;
 /**
  * 平台类 - 可以从下方穿过，只能从上方着陆的平台
  */
-public class Platform {
-    private int x, y, width, height;
-    private Color color;
+public class Platform extends MapElement {
     
     public Platform(int x, int y, int width, int height) {
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
-        this.color = new Color(139, 69, 19); // 棕色
+        super(x, y, width, height, new Color(139, 69, 19)); // 棕色
     }
     
+    @Override
     public void render(Graphics g) {
         g.setColor(color);
         g.fillRect(x, y, width, height);
@@ -44,10 +39,7 @@ public class Platform {
     
     // 检查玩家是否从上方着陆到平台
     public boolean checkLanding(double playerX, double playerY, int playerWidth, int playerHeight, double velocityY) {
-        if (isPlayerOnPlatform(playerX, playerY, playerWidth, playerHeight) && velocityY > 0) {
-            return true;
-        }
-        return false;
+        return isPlayerOnPlatform(playerX, playerY, playerWidth, playerHeight) && velocityY > 0;
     }
     
     // 获取平台顶部Y坐标（用于设置玩家位置）
@@ -55,9 +47,5 @@ public class Platform {
         return y;
     }
     
-    // 获取物块边界
-    public int getX() { return x; }
-    public int getY() { return y; }
-    public int getWidth() { return width; }
-    public int getHeight() { return height; }
+    // 注意：getX(), getY(), getWidth(), getHeight() 方法已从基类继承
 }

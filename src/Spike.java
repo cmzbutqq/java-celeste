@@ -6,18 +6,13 @@ import java.awt.Graphics;
 /**
  * 尖刺类 - 致命的障碍物，玩家碰到后会死亡
  */
-public class Spike {
-    private int x, y, width, height;
-    private Color color;
+public class Spike extends MapElement {
     
     public Spike(int x, int y, int width, int height) {
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
-        this.color = new Color(139, 0, 0); // 深红色
+        super(x, y, width, height, new Color(139, 0, 0)); // 深红色
     }
     
+    @Override
     public void render(Graphics g) {
         // 绘制尖刺主体
         g.setColor(color);
@@ -39,17 +34,6 @@ public class Spike {
         g.drawPolygon(xPoints, yPoints, 3);
     }
     
-    // 检查玩家是否与尖刺碰撞
-    public boolean checkCollision(double playerX, double playerY, int playerWidth, int playerHeight) {
-        return playerX < x + width && 
-               playerX + playerWidth > x && 
-               playerY < y + height && 
-               playerY + playerHeight > y;
-    }
-    
-    // 获取尖刺边界
-    public int getX() { return x; }
-    public int getY() { return y; }
-    public int getWidth() { return width; }
-    public int getHeight() { return height; }
+    // 注意：checkCollision() 方法已从基类继承，但这里可以重写以提供更具体的碰撞逻辑
+    // 注意：getX(), getY(), getWidth(), getHeight() 方法已从基类继承
 }

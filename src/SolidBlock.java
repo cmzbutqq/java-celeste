@@ -6,18 +6,13 @@ import java.awt.Graphics;
 /**
  * 实心物块类 - 不能从任何方向穿过的障碍物
  */
-public class SolidBlock {
-    private int x, y, width, height;
-    private Color color;
+public class SolidBlock extends MapElement {
     
     public SolidBlock(int x, int y, int width, int height) {
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
-        this.color = new Color(101, 67, 33); // 深棕色
+        super(x, y, width, height, new Color(101, 67, 33)); // 深棕色
     }
     
+    @Override
     public void render(Graphics g) {
         g.setColor(color);
         g.fillRect(x, y, width, height);
@@ -31,17 +26,6 @@ public class SolidBlock {
         g.drawRect(x, y, width, height);
     }
     
-    // 检查玩家是否与物块碰撞
-    public boolean checkCollision(double playerX, double playerY, int playerWidth, int playerHeight) {
-        return playerX < x + width && 
-               playerX + playerWidth > x && 
-               playerY < y + height && 
-               playerY + playerHeight > y;
-    }
-    
-    // 获取物块边界
-    public int getX() { return x; }
-    public int getY() { return y; }
-    public int getWidth() { return width; }
-    public int getHeight() { return height; }
+    // 注意：checkCollision() 方法已从基类继承，但这里可以重写以提供更具体的碰撞逻辑
+    // 注意：getX(), getY(), getWidth(), getHeight() 方法已从基类继承
 }

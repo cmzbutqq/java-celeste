@@ -1,3 +1,4 @@
+import java.awt.Graphics;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,13 +22,65 @@ public class MapDesign {
             this.solidBlocks = new ArrayList<>();
             this.spikes = new ArrayList<>();
         }
+        
+        /**
+         * 渲染所有地图元素
+         */
+        public void renderAll(Graphics g) {
+            // 渲染所有平台
+            for (Platform platform : platforms) {
+                platform.render(g);
+            }
+            
+            // 渲染所有实心物块
+            for (SolidBlock block : solidBlocks) {
+                block.render(g);
+            }
+            
+            // 渲染所有尖刺
+            for (Spike spike : spikes) {
+                spike.render(g);
+            }
+        }
+        
+        /**
+         * 获取所有地图元素的总数
+         */
+        public int getTotalElementCount() {
+            return platforms.size() + solidBlocks.size() + spikes.size();
+        }
+        
+        /**
+         * 获取所有地图元素的详细信息
+         */
+        public String getAllElementsInfo() {
+            StringBuilder info = new StringBuilder();
+            info.append("=== 地图元素详情 ===\n");
+            
+            info.append("平台 (").append(platforms.size()).append("个):\n");
+            for (int i = 0; i < platforms.size(); i++) {
+                info.append("  ").append(i + 1).append(". ").append(platforms.get(i).getInfo()).append("\n");
+            }
+            
+            info.append("实心物块 (").append(solidBlocks.size()).append("个):\n");
+            for (int i = 0; i < solidBlocks.size(); i++) {
+                info.append("  ").append(i + 1).append(". ").append(solidBlocks.get(i).getInfo()).append("\n");
+            }
+            
+            info.append("尖刺 (").append(spikes.size()).append("个):\n");
+            for (int i = 0; i < spikes.size(); i++) {
+                info.append("  ").append(i + 1).append(". ").append(spikes.get(i).getInfo()).append("\n");
+            }
+            
+            return info.toString();
+        }
     }
     
     /**
      * 地图构建器 - 用于动态创建地图
      */
     public static class MapBuilder {
-        private MapData mapData;
+        private final MapData mapData;
         
         public MapBuilder() {
             this.mapData = new MapData();
@@ -86,9 +139,17 @@ public class MapDesign {
      * 获取地图统计信息
      */
     public static String getMapStats(MapData mapData) {
-        return String.format("地图统计: 平台%d个, 实心物块%d个, 尖刺%d个", 
+        return String.format("地图统计: 平台%d个, 实心物块%d个, 尖刺%d个, 总计%d个元素", 
             mapData.platforms.size(), 
             mapData.solidBlocks.size(), 
-            mapData.spikes.size());
+            mapData.spikes.size(),
+            mapData.getTotalElementCount());
+    }
+    
+    /**
+     * 获取所有地图元素的通用信息
+     */
+    public static String getAllElementsInfo(MapData mapData) {
+        return mapData.getAllElementsInfo();
     }
 }
