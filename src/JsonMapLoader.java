@@ -31,6 +31,9 @@ public class JsonMapLoader {
         
         @JsonProperty("spikes")
         public List<ElementData> spikes;
+        
+        @JsonProperty("checkpoints")
+        public List<CheckpointData> checkpoints;
     }
     
     /**
@@ -48,6 +51,35 @@ public class JsonMapLoader {
         
         @JsonProperty("height")
         public int height;
+        
+        @JsonProperty("comment")
+        public String comment;
+    }
+    
+    /**
+     * 重生点数据结构
+     */
+    public static class CheckpointData {
+        @JsonProperty("x")
+        public int x;
+        
+        @JsonProperty("y")
+        public int y;
+        
+        @JsonProperty("width")
+        public int width;
+        
+        @JsonProperty("height")
+        public int height;
+        
+        @JsonProperty("respawnOffsetX")
+        public int respawnOffsetX;
+        
+        @JsonProperty("respawnOffsetY")
+        public int respawnOffsetY;
+        
+        @JsonProperty("defaultActivated")
+        public boolean defaultActivated;
         
         @JsonProperty("comment")
         public String comment;
@@ -103,6 +135,15 @@ public class JsonMapLoader {
         if (config.spikes != null) {
             for (ElementData spike : config.spikes) {
                 builder.addSpike(spike.x, spike.y, spike.width, spike.height);
+            }
+        }
+        
+        // 添加重生点
+        if (config.checkpoints != null) {
+            for (CheckpointData checkpoint : config.checkpoints) {
+                builder.addCheckpoint(checkpoint.x, checkpoint.y, checkpoint.width, checkpoint.height,
+                                    checkpoint.respawnOffsetX, checkpoint.respawnOffsetY, 
+                                    checkpoint.defaultActivated);
             }
         }
         

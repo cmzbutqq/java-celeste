@@ -1,7 +1,191 @@
 {
-  "name" : "简单地图",
-  "description" : "适合新手的简单地图",
+  "name" : "default",
+  "description" : "default",
   "platforms" : [ ],
-  "solidBlocks" : [ ],
-  "spikes" : [ ]
+  "solidBlocks" : [ {
+    "x" : 107,
+    "y" : 820,
+    "width" : 19,
+    "height" : 206,
+    "comment" : "实心物块"
+  }, {
+    "x" : 614,
+    "y" : 696,
+    "width" : 29,
+    "height" : 309,
+    "comment" : "实心物块"
+  }, {
+    "x" : 646,
+    "y" : 985,
+    "width" : 35,
+    "height" : 16,
+    "comment" : "实心物块"
+  }, {
+    "x" : 1019,
+    "y" : 984,
+    "width" : 33,
+    "height" : 14,
+    "comment" : "实心物块"
+  }, {
+    "x" : 716,
+    "y" : 620,
+    "width" : 12,
+    "height" : 148,
+    "comment" : "实心物块"
+  }, {
+    "x" : 716,
+    "y" : 468,
+    "width" : 11,
+    "height" : 136,
+    "comment" : "实心物块"
+  }, {
+    "x" : 0,
+    "y" : 711,
+    "width" : 543,
+    "height" : 49,
+    "comment" : "实心物块"
+  }, {
+    "x" : 684,
+    "y" : 457,
+    "width" : 42,
+    "height" : 12,
+    "comment" : "实心物块"
+  } ],
+  "spikes" : [ {
+    "x" : 126,
+    "y" : 1009,
+    "width" : 1791,
+    "height" : 21,
+    "comment" : "尖刺"
+  }, {
+    "x" : 619,
+    "y" : 691,
+    "width" : 15,
+    "height" : 10,
+    "comment" : "尖刺"
+  }, {
+    "x" : 705,
+    "y" : 900,
+    "width" : 308,
+    "height" : 12,
+    "comment" : "尖刺"
+  }, {
+    "x" : 1078,
+    "y" : 812,
+    "width" : 13,
+    "height" : 196,
+    "comment" : "尖刺"
+  }, {
+    "x" : 905,
+    "y" : 788,
+    "width" : 184,
+    "height" : 16,
+    "comment" : "尖刺"
+  }, {
+    "x" : 769,
+    "y" : 839,
+    "width" : 18,
+    "height" : 16,
+    "comment" : "尖刺"
+  }, {
+    "x" : 709,
+    "y" : 468,
+    "width" : 6,
+    "height" : 433,
+    "comment" : "尖刺"
+  }, {
+    "x" : 790,
+    "y" : 468,
+    "width" : 8,
+    "height" : 236,
+    "comment" : "尖刺"
+  }, {
+    "x" : 798,
+    "y" : 700,
+    "width" : 19,
+    "height" : 24,
+    "comment" : "尖刺"
+  }, {
+    "x" : 817,
+    "y" : 722,
+    "width" : 17,
+    "height" : 22,
+    "comment" : "尖刺"
+  }, {
+    "x" : 834,
+    "y" : 744,
+    "width" : 16,
+    "height" : 17,
+    "comment" : "尖刺"
+  }, {
+    "x" : 849,
+    "y" : 761,
+    "width" : 14,
+    "height" : 17,
+    "comment" : "尖刺"
+  }, {
+    "x" : 866,
+    "y" : 775,
+    "width" : 23,
+    "height" : 16,
+    "comment" : "尖刺"
+  }, {
+    "x" : 891,
+    "y" : 788,
+    "width" : 11,
+    "height" : 8,
+    "comment" : "尖刺"
+  }, {
+    "x" : 99,
+    "y" : 888,
+    "width" : 8,
+    "height" : 136,
+    "comment" : "尖刺"
+  }, {
+    "x" : 0,
+    "y" : 700,
+    "width" : 545,
+    "height" : 12,
+    "comment" : "尖刺"
+  }, {
+    "x" : 543,
+    "y" : 712,
+    "width" : 7,
+    "height" : 44,
+    "comment" : "尖刺"
+  }, {
+    "x" : 222,
+    "y" : 763,
+    "width" : 12,
+    "height" : 92,
+    "comment" : "尖刺"
+  } ],
+  "checkpoints" : [ {
+    "x" : 12,
+    "y" : 908,
+    "width" : 56,
+    "height" : 77,
+    "respawnOffsetX" : 28,
+    "respawnOffsetY" : 38,
+    "defaultActivated" : true,
+    "comment" : "重生点"
+  }, {
+    "x" : 1018,
+    "y" : 940,
+    "width" : 30,
+    "height" : 33,
+    "respawnOffsetX" : 15,
+    "respawnOffsetY" : 16,
+    "defaultActivated" : false,
+    "comment" : "重生点"
+  }, {
+    "x" : 702,
+    "y" : 412,
+    "width" : 32,
+    "height" : 45,
+    "respawnOffsetX" : 16,
+    "respawnOffsetY" : 22,
+    "defaultActivated" : false,
+    "comment" : "重生点"
+  } ]
 }

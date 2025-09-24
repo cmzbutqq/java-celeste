@@ -24,6 +24,7 @@ public class Game extends JFrame implements KeyListener {
     private SolidBlock[] solidBlocks;
     private Platform[] platforms;
     private Spike[] spikes;
+    private Checkpoint[] checkpoints;
     private MapDesign.MapData currentMap;
     
     public Game() {
@@ -47,7 +48,10 @@ public class Game extends JFrame implements KeyListener {
         player.setPlatforms(platforms);
         player.setSolidBlocks(solidBlocks);
         player.setSpikes(spikes);
-        player.setRespawnPoint(100, 900); // 设置重生点
+        player.setCheckpoints(checkpoints);
+        
+        // 设置初始重生点（选择离屏幕中央最近的激活的重生点）
+        setInitialRespawnPoint();
         
         // 添加键盘监听
         addKeyListener(this);
@@ -91,6 +95,9 @@ public class Game extends JFrame implements KeyListener {
     
     private void update(double deltaTime) {
         player.update(deltaTime);
+        
+        // 检查重生点激活
+        checkCheckpointActivation();
     }
     
     @Override
@@ -144,6 +151,11 @@ public class Game extends JFrame implements KeyListener {
                 spike.render(g);
             }
             
+            // 绘制重生点
+            for (Checkpoint checkpoint : checkpoints) {
+                checkpoint.render(g);
+            }
+            
             // 绘制玩家
             player.render(g);
         }
@@ -165,6 +177,7 @@ public class Game extends JFrame implements KeyListener {
         platforms = mapData.platforms.toArray(new Platform[0]);
         solidBlocks = mapData.solidBlocks.toArray(new SolidBlock[0]);
         spikes = mapData.spikes.toArray(new Spike[0]);
+        checkpoints = mapData.checkpoints.toArray(new Checkpoint[0]);
         
         // 打印地图统计信息
         System.out.println(MapDesign.getMapStats(mapData));
@@ -179,6 +192,71 @@ public class Game extends JFrame implements KeyListener {
         
         MapDesign.MapData mapData = MapDesign.createMapFromConfig(jsonPath);
         loadMap(mapData);
+    }
+    
+    /**
+     * 设置初始重生点（选择离屏幕中央最近的激活的重生点）
+     */
+    private void setInitialRespawnPoint() {
+        int screenCenterX = WINDOW_WIDTH / 2;
+        int screenCenterY = WINDOW_HEIGHT / 2;
+        
+        Checkpoint nearestActivatedCheckpoint = null;
+        double minDistance = Double.MAX_VALUE;
+        
+        // 寻找离屏幕中央最近的激活的重生点
+        for (Checkpoint checkpoint : checkpoints) {
+            if (checkpoint.isActivated()) {
+                double distance = checkpoint.getDistanceTo(screenCenterX, screenCenterY);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestActivatedCheckpoint = checkpoint;
+                }
+            }
+        }
+        
+        if (nearestActivatedCheckpoint != null) {
+            player.setRespawnPoint(nearestActivatedCheckpoint.getRespawnX(), nearestActivatedCheckpoint.getRespawnY());
+            System.out.println("设置初始重生点: (" + nearestActivatedCheckpoint.getRespawnX() + ", " + nearestActivatedCheckpoint.getRespawnY() + ")");
+        } else {
+            // 如果没有激活的重生点，使用默认位置
+            player.setRespawnPoint(100, 900);
+            System.out.println("没有激活的重生点，使用默认重生点: (100, 900)");
+        }
+    }
+    
+    /**
+     * 检查重生点激活
+     */
+    private void checkCheckpointActivation() {
+        for (Checkpoint checkpoint : checkpoints) {
+            if (checkpoint.isPlayerInActivationBox(player.getX(), player.getY(), 30, 40)) {
+                if (!checkpoint.isActivated()) {
+                    checkpoint.activate();
+                    System.out.println("重生点已激活: (" + checkpoint.getRespawnX() + ", " + checkpoint.getRespawnY() + ")");
+                }
+            }
+        }
+    }
+    
+    /**
+     * 获取离死亡地点最近的激活的重生点
+     */
+    public Checkpoint getNearestActivatedCheckpoint(double deathX, double deathY) {
+        Checkpoint nearestCheckpoint = null;
+        double minDistance = Double.MAX_VALUE;
+        
+        for (Checkpoint checkpoint : checkpoints) {
+            if (checkpoint.isActivated()) {
+                double distance = checkpoint.getDistanceTo(deathX, deathY);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestCheckpoint = checkpoint;
+                }
+            }
+        }
+        
+        return nearestCheckpoint;
     }
     
 }

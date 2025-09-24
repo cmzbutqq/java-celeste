@@ -21,6 +21,7 @@ import javax.swing.DefaultListModel;
 import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -51,7 +52,7 @@ public class MapEditor extends JFrame {
     
     // 编辑器状态
     private enum EditMode {
-        PLATFORM, SOLID_BLOCK, SPIKE, SELECT, DELETE
+        PLATFORM, SOLID_BLOCK, SPIKE, CHECKPOINT, SELECT, DELETE
     }
     
     private EditMode currentMode = EditMode.PLATFORM;
@@ -127,6 +128,10 @@ public class MapEditor extends JFrame {
         spikeBtn.addActionListener(e -> setEditMode(EditMode.SPIKE));
         spikeBtn.setBackground(Color.RED);
         
+        JButton checkpointBtn = new JButton("重生点");
+        checkpointBtn.addActionListener(e -> setEditMode(EditMode.CHECKPOINT));
+        checkpointBtn.setBackground(new Color(100, 150, 255));
+        
         JButton selectBtn = new JButton("选择");
         selectBtn.addActionListener(e -> setEditMode(EditMode.SELECT));
         selectBtn.setBackground(Color.YELLOW);
@@ -138,6 +143,7 @@ public class MapEditor extends JFrame {
         toolbar.add(platformBtn);
         toolbar.add(blockBtn);
         toolbar.add(spikeBtn);
+        toolbar.add(checkpointBtn);
         toolbar.add(selectBtn);
         toolbar.add(deleteBtn);
         
@@ -245,8 +251,9 @@ public class MapEditor extends JFrame {
         inputMap.put(KeyStroke.getKeyStroke("1"), "platform");
         inputMap.put(KeyStroke.getKeyStroke("2"), "solidBlock");
         inputMap.put(KeyStroke.getKeyStroke("3"), "spike");
-        inputMap.put(KeyStroke.getKeyStroke("4"), "select");
-        inputMap.put(KeyStroke.getKeyStroke("5"), "delete");
+        inputMap.put(KeyStroke.getKeyStroke("4"), "checkpoint");
+        inputMap.put(KeyStroke.getKeyStroke("5"), "select");
+        inputMap.put(KeyStroke.getKeyStroke("6"), "delete");
         
         actionMap.put("platform", new AbstractAction() {
             @Override
@@ -259,6 +266,10 @@ public class MapEditor extends JFrame {
         actionMap.put("spike", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) { setEditMode(EditMode.SPIKE); }
+        });
+        actionMap.put("checkpoint", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) { setEditMode(EditMode.CHECKPOINT); }
         });
         actionMap.put("select", new AbstractAction() {
             @Override
@@ -498,6 +509,20 @@ public class MapEditor extends JFrame {
             config.spikes.add(data);
         }
         
+        config.checkpoints = new ArrayList<>();
+        for (Checkpoint c : currentMap.checkpoints) {
+            JsonMapLoader.CheckpointData data = new JsonMapLoader.CheckpointData();
+            data.x = c.getX();
+            data.y = c.getY();
+            data.width = c.getWidth();
+            data.height = c.getHeight();
+            data.respawnOffsetX = c.getRespawnOffsetX();
+            data.respawnOffsetY = c.getRespawnOffsetY();
+            data.defaultActivated = c.isDefaultActivated();
+            data.comment = "重生点";
+            config.checkpoints.add(data);
+        }
+        
         ObjectMapper mapper = new ObjectMapper();
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
         mapper.writeValue(file, config);
@@ -590,7 +615,10 @@ public class MapEditor extends JFrame {
                     hint = "点击并拖拽创建实心物块";
                     break;
                 case SPIKE:
-                    hint = "点击创建尖刺";
+                    hint = "点击并拖拽创建尖刺";
+                    break;
+                case CHECKPOINT:
+                    hint = "点击并拖拽创建重生点";
                     break;
                 case SELECT:
                     hint = "点击选择元素";
@@ -623,6 +651,8 @@ public class MapEditor extends JFrame {
                         currentMap.solidBlocks.remove(element);
                     } else if (element instanceof Spike) {
                         currentMap.spikes.remove(element);
+                    } else if (element instanceof Checkpoint) {
+                        currentMap.checkpoints.remove(element);
                     }
                     updateStatus();
                     repaint();
@@ -648,7 +678,9 @@ public class MapEditor extends JFrame {
                 } else if (currentMode == EditMode.SOLID_BLOCK) {
                     createSolidBlock(dragStart, mousePos);
                 } else if (currentMode == EditMode.SPIKE) {
-                    createSpike(mousePos);
+                    createSpike(dragStart, mousePos);
+                } else if (currentMode == EditMode.CHECKPOINT) {
+                    createCheckpoint(dragStart, mousePos);
                 }
                 
                 isDragging = false;
@@ -706,6 +738,14 @@ public class MapEditor extends JFrame {
                 }
             }
             
+            // 检查重生点
+            for (Checkpoint c : currentMap.checkpoints) {
+                if (pos.x >= c.getX() && pos.x <= c.getX() + c.getWidth() &&
+                    pos.y >= c.getY() && pos.y <= c.getY() + c.getHeight()) {
+                    return c;
+                }
+            }
+            
             return null;
         }
         
@@ -740,8 +780,111 @@ public class MapEditor extends JFrame {
         /**
          * 创建尖刺
          */
-        private void createSpike(Point pos) {
-            currentMap.spikes.add(new Spike(pos.x, pos.y, 15, 30));
+        private void createSpike(Point start, Point end) {
+            int x = Math.min(start.x, end.x);
+            int y = Math.min(start.y, end.y);
+            int width = Math.abs(end.x - start.x);
+            int height = Math.abs(end.y - start.y);
+            
+            if (width > 5 && height > 5) { // 最小尺寸限制
+                currentMap.spikes.add(new Spike(x, y, width, height));
+            }
+        }
+        
+        private void createCheckpoint(Point start, Point end) {
+            int x = Math.min(start.x, end.x);
+            int y = Math.min(start.y, end.y);
+            int width = Math.abs(end.x - start.x);
+            int height = Math.abs(end.y - start.y);
+            
+            if (width > 20 && height > 20) { // 最小尺寸限制
+                // 默认重生点偏移到激活框中心
+                int respawnOffsetX = width / 2;
+                int respawnOffsetY = height / 2;
+                
+                // 弹出对话框设置重生点属性
+                CheckpointDialog dialog = new CheckpointDialog(MapEditor.this, respawnOffsetX, respawnOffsetY, false);
+                dialog.setVisible(true);
+                
+                if (dialog.isConfirmed()) {
+                    currentMap.checkpoints.add(new Checkpoint(x, y, width, height, 
+                        dialog.getRespawnOffsetX(), dialog.getRespawnOffsetY(), 
+                        dialog.isDefaultActivated()));
+                }
+            }
+        }
+    }
+    
+    /**
+     * 重生点属性设置对话框
+     */
+    private static class CheckpointDialog extends JDialog {
+        private JTextField respawnOffsetXField;
+        private JTextField respawnOffsetYField;
+        private javax.swing.JCheckBox defaultActivatedCheckBox;
+        private boolean confirmed = false;
+        
+        public CheckpointDialog(JFrame parent, int respawnOffsetX, int respawnOffsetY, boolean defaultActivated) {
+            super(parent, "重生点属性", true);
+            setSize(300, 200);
+            setLocationRelativeTo(parent);
+            setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+            
+            JPanel panel = new JPanel(new GridLayout(4, 2, 5, 5));
+            panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+            
+            panel.add(new JLabel("重生点X偏移:"));
+            respawnOffsetXField = new JTextField(String.valueOf(respawnOffsetX));
+            panel.add(respawnOffsetXField);
+            
+            panel.add(new JLabel("重生点Y偏移:"));
+            respawnOffsetYField = new JTextField(String.valueOf(respawnOffsetY));
+            panel.add(respawnOffsetYField);
+            
+            panel.add(new JLabel("默认激活:"));
+            defaultActivatedCheckBox = new javax.swing.JCheckBox();
+            defaultActivatedCheckBox.setSelected(defaultActivated);
+            panel.add(defaultActivatedCheckBox);
+            
+            JButton okButton = new JButton("确定");
+            okButton.addActionListener(e -> {
+                confirmed = true;
+                dispose();
+            });
+            
+            JButton cancelButton = new JButton("取消");
+            cancelButton.addActionListener(e -> dispose());
+            
+            JPanel buttonPanel = new JPanel(new FlowLayout());
+            buttonPanel.add(okButton);
+            buttonPanel.add(cancelButton);
+            
+            add(panel, BorderLayout.CENTER);
+            add(buttonPanel, BorderLayout.SOUTH);
+        }
+        
+        public boolean isConfirmed() {
+            return confirmed;
+        }
+        
+        public int getRespawnOffsetX() {
+            try {
+                return Integer.parseInt(respawnOffsetXField.getText());
+            } catch (NumberFormatException e) {
+                return 0;
+            }
+        }
+        
+        public int getRespawnOffsetY() {
+            try {
+                return Integer.parseInt(respawnOffsetYField.getText());
+            } catch (NumberFormatException e) {
+                return 0;
+            }
+        }
+        
+        public boolean isDefaultActivated() {
+            return defaultActivatedCheckBox.isSelected();
         }
     }
     

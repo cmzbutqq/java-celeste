@@ -23,12 +23,14 @@ public class Player {
     private SolidBlock[] solidBlocks; // 实心物块数组
     private Platform[] platforms; // 平台数组
     private Spike[] spikes; // 尖刺数组
+    private Checkpoint[] checkpoints; // 重生点数组
     
     // 死亡和重生相关
     private boolean isDead = false;
     private int deathAnimationTimer = 0;
     private static final int DEATH_ANIMATION_DURATION = 30; // 死亡动画持续30帧
     private double respawnX, respawnY; // 重生位置
+    private double deathX, deathY; // 死亡位置
     
     // 冲刺相关
     private boolean isDashing = false;
@@ -79,9 +81,41 @@ public class Player {
         this.spikes = spikes;
     }
     
+    public void setCheckpoints(Checkpoint[] checkpoints) {
+        this.checkpoints = checkpoints;
+    }
+    
     public void setRespawnPoint(double x, double y) {
         this.respawnX = x;
         this.respawnY = y;
+    }
+    
+    /**
+     * 更新重生点到最近的激活重生点
+     */
+    public void updateRespawnToNearestActivated() {
+        if (checkpoints == null || checkpoints.length == 0) {
+            return;
+        }
+        
+        Checkpoint nearestCheckpoint = null;
+        double minDistance = Double.MAX_VALUE;
+        
+        // 寻找离死亡地点最近的激活的重生点
+        for (Checkpoint checkpoint : checkpoints) {
+            if (checkpoint.isActivated()) {
+                double distance = checkpoint.getDistanceTo(deathX, deathY);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestCheckpoint = checkpoint;
+                }
+            }
+        }
+        
+        if (nearestCheckpoint != null) {
+            setRespawnPoint(nearestCheckpoint.getRespawnX(), nearestCheckpoint.getRespawnY());
+            System.out.println("更新重生点到最近的激活重生点: (" + nearestCheckpoint.getRespawnX() + ", " + nearestCheckpoint.getRespawnY() + ")");
+        }
     }
     
     public void update(double deltaTime) {
@@ -89,7 +123,8 @@ public class Player {
         if (isDead) {
             deathAnimationTimer++;
             if (deathAnimationTimer >= DEATH_ANIMATION_DURATION) {
-                // 死亡动画结束，重生
+                // 死亡动画结束，更新重生点并重生
+                updateRespawnToNearestActivated();
                 respawn();
             }
             return;
@@ -385,6 +420,8 @@ public class Player {
     private void die() {
         isDead = true;
         deathAnimationTimer = 0;
+        deathX = x; // 记录死亡位置
+        deathY = y;
         velocityX = 0;
         velocityY = 0;
         System.out.println("玩家死亡！正在重生...");
