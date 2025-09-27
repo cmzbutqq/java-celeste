@@ -52,7 +52,7 @@ public class MapEditor extends JFrame {
     
     // 编辑器状态
     private enum EditMode {
-        PLATFORM, SOLID_BLOCK, SPIKE, CHECKPOINT, SELECT, DELETE
+        PLATFORM, SOLID_BLOCK, SPIKE, CHECKPOINT, ENERGY_BEAN, SELECT, DELETE
     }
     
     private EditMode currentMode = EditMode.PLATFORM;
@@ -132,6 +132,10 @@ public class MapEditor extends JFrame {
         checkpointBtn.addActionListener(e -> setEditMode(EditMode.CHECKPOINT));
         checkpointBtn.setBackground(new Color(100, 150, 255));
         
+        JButton energyBeanBtn = new JButton("能量豆");
+        energyBeanBtn.addActionListener(e -> setEditMode(EditMode.ENERGY_BEAN));
+        energyBeanBtn.setBackground(new Color(144, 238, 144)); // 淡绿色
+        
         JButton selectBtn = new JButton("选择");
         selectBtn.addActionListener(e -> setEditMode(EditMode.SELECT));
         selectBtn.setBackground(Color.YELLOW);
@@ -144,6 +148,7 @@ public class MapEditor extends JFrame {
         toolbar.add(blockBtn);
         toolbar.add(spikeBtn);
         toolbar.add(checkpointBtn);
+        toolbar.add(energyBeanBtn);
         toolbar.add(selectBtn);
         toolbar.add(deleteBtn);
         
@@ -252,8 +257,9 @@ public class MapEditor extends JFrame {
         inputMap.put(KeyStroke.getKeyStroke("2"), "solidBlock");
         inputMap.put(KeyStroke.getKeyStroke("3"), "spike");
         inputMap.put(KeyStroke.getKeyStroke("4"), "checkpoint");
-        inputMap.put(KeyStroke.getKeyStroke("5"), "select");
-        inputMap.put(KeyStroke.getKeyStroke("6"), "delete");
+        inputMap.put(KeyStroke.getKeyStroke("5"), "energyBean");
+        inputMap.put(KeyStroke.getKeyStroke("6"), "select");
+        inputMap.put(KeyStroke.getKeyStroke("7"), "delete");
         
         actionMap.put("platform", new AbstractAction() {
             @Override
@@ -270,6 +276,10 @@ public class MapEditor extends JFrame {
         actionMap.put("checkpoint", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) { setEditMode(EditMode.CHECKPOINT); }
+        });
+        actionMap.put("energyBean", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) { setEditMode(EditMode.ENERGY_BEAN); }
         });
         actionMap.put("select", new AbstractAction() {
             @Override
@@ -341,6 +351,18 @@ public class MapEditor extends JFrame {
             elementListModel.addElement(String.format("尖刺 %d: (%d,%d) %dx%d", 
                 i + 1, s.getX(), s.getY(), s.getWidth(), s.getHeight()));
         }
+        
+        for (int i = 0; i < currentMap.checkpoints.size(); i++) {
+            Checkpoint c = currentMap.checkpoints.get(i);
+            elementListModel.addElement(String.format("重生点 %d: (%d,%d) %dx%d", 
+                i + 1, c.getX(), c.getY(), c.getWidth(), c.getHeight()));
+        }
+        
+        for (int i = 0; i < currentMap.energyBeans.size(); i++) {
+            EnergyBean e = currentMap.energyBeans.get(i);
+            elementListModel.addElement(String.format("能量豆 %d: (%d,%d) %dx%d", 
+                i + 1, e.getX(), e.getY(), e.getWidth(), e.getHeight()));
+        }
     }
     
     /**
@@ -352,13 +374,19 @@ public class MapEditor extends JFrame {
             // 计算实际元素索引
             int platformCount = currentMap.platforms.size();
             int solidBlockCount = currentMap.solidBlocks.size();
+            int spikeCount = currentMap.spikes.size();
+            int checkpointCount = currentMap.checkpoints.size();
             
             if (selectedIndex < platformCount) {
                 selectedElement = currentMap.platforms.get(selectedIndex);
             } else if (selectedIndex < platformCount + solidBlockCount) {
                 selectedElement = currentMap.solidBlocks.get(selectedIndex - platformCount);
-            } else {
+            } else if (selectedIndex < platformCount + solidBlockCount + spikeCount) {
                 selectedElement = currentMap.spikes.get(selectedIndex - platformCount - solidBlockCount);
+            } else if (selectedIndex < platformCount + solidBlockCount + spikeCount + checkpointCount) {
+                selectedElement = currentMap.checkpoints.get(selectedIndex - platformCount - solidBlockCount - spikeCount);
+            } else {
+                selectedElement = currentMap.energyBeans.get(selectedIndex - platformCount - solidBlockCount - spikeCount - checkpointCount);
             }
             
             mapCanvas.repaint();
@@ -376,6 +404,10 @@ public class MapEditor extends JFrame {
                 currentMap.solidBlocks.remove(selectedElement);
             } else if (selectedElement instanceof Spike) {
                 currentMap.spikes.remove(selectedElement);
+            } else if (selectedElement instanceof Checkpoint) {
+                currentMap.checkpoints.remove(selectedElement);
+            } else if (selectedElement instanceof EnergyBean) {
+                currentMap.energyBeans.remove(selectedElement);
             }
             selectedElement = null;
             updateStatus();
@@ -397,6 +429,13 @@ public class MapEditor extends JFrame {
             } else if (selectedElement instanceof Spike) {
                 Spike s = (Spike) selectedElement;
                 currentMap.spikes.add(new Spike(s.getX() + 50, s.getY() + 50, s.getWidth(), s.getHeight()));
+            } else if (selectedElement instanceof Checkpoint) {
+                Checkpoint c = (Checkpoint) selectedElement;
+                currentMap.checkpoints.add(new Checkpoint(c.getX() + 50, c.getY() + 50, c.getWidth(), c.getHeight(),
+                    c.getRespawnOffsetX(), c.getRespawnOffsetY(), c.isDefaultActivated()));
+            } else if (selectedElement instanceof EnergyBean) {
+                EnergyBean e = (EnergyBean) selectedElement;
+                currentMap.energyBeans.add(new EnergyBean(e.getX() + 50, e.getY() + 50, e.getWidth()));
             }
             updateStatus();
             mapCanvas.repaint();
@@ -523,6 +562,17 @@ public class MapEditor extends JFrame {
             config.checkpoints.add(data);
         }
         
+        config.energyBeans = new ArrayList<>();
+        for (EnergyBean e : currentMap.energyBeans) {
+            JsonMapLoader.ElementData data = new JsonMapLoader.ElementData();
+            data.x = e.getX();
+            data.y = e.getY();
+            data.width = e.getWidth();
+            data.height = e.getHeight();
+            data.comment = "能量豆";
+            config.energyBeans.add(data);
+        }
+        
         ObjectMapper mapper = new ObjectMapper();
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
         mapper.writeValue(file, config);
@@ -620,6 +670,9 @@ public class MapEditor extends JFrame {
                 case CHECKPOINT:
                     hint = "点击并拖拽创建重生点";
                     break;
+                case ENERGY_BEAN:
+                    hint = "点击创建能量豆";
+                    break;
                 case SELECT:
                     hint = "点击选择元素";
                     break;
@@ -653,10 +706,17 @@ public class MapEditor extends JFrame {
                         currentMap.spikes.remove(element);
                     } else if (element instanceof Checkpoint) {
                         currentMap.checkpoints.remove(element);
+                    } else if (element instanceof EnergyBean) {
+                        currentMap.energyBeans.remove(element);
                     }
                     updateStatus();
                     repaint();
                 }
+            } else if (currentMode == EditMode.ENERGY_BEAN) {
+                // 能量豆模式：直接创建
+                createEnergyBean(mousePos);
+                updateStatus();
+                repaint();
             } else {
                 // 创建模式：开始拖拽
                 isDragging = true;
@@ -746,6 +806,14 @@ public class MapEditor extends JFrame {
                 }
             }
             
+            // 检查能量豆
+            for (EnergyBean e : currentMap.energyBeans) {
+                if (pos.x >= e.getX() && pos.x <= e.getX() + e.getWidth() &&
+                    pos.y >= e.getY() && pos.y <= e.getY() + e.getHeight()) {
+                    return e;
+                }
+            }
+            
             return null;
         }
         
@@ -812,6 +880,14 @@ public class MapEditor extends JFrame {
                         dialog.isDefaultActivated()));
                 }
             }
+        }
+        
+        /**
+         * 创建能量豆
+         */
+        private void createEnergyBean(Point pos) {
+            // 能量豆大小固定，在点击位置创建
+            currentMap.energyBeans.add(new EnergyBean(pos.x - 10, pos.y - 10)); // 中心对齐
         }
     }
     

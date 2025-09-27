@@ -17,12 +17,14 @@ public class MapDesign {
         public List<SolidBlock> solidBlocks;
         public List<Spike> spikes;
         public List<Checkpoint> checkpoints;
+        public List<EnergyBean> energyBeans;
         
         public MapData() {
             this.platforms = new ArrayList<>();
             this.solidBlocks = new ArrayList<>();
             this.spikes = new ArrayList<>();
             this.checkpoints = new ArrayList<>();
+            this.energyBeans = new ArrayList<>();
         }
         
         /**
@@ -48,13 +50,18 @@ public class MapDesign {
             for (Checkpoint checkpoint : checkpoints) {
                 checkpoint.render(g);
             }
+            
+            // 渲染所有能量豆
+            for (EnergyBean energyBean : energyBeans) {
+                energyBean.render(g);
+            }
         }
         
         /**
          * 获取所有地图元素的总数
          */
         public int getTotalElementCount() {
-            return platforms.size() + solidBlocks.size() + spikes.size() + checkpoints.size();
+            return platforms.size() + solidBlocks.size() + spikes.size() + checkpoints.size() + energyBeans.size();
         }
         
         /**
@@ -82,6 +89,11 @@ public class MapDesign {
             info.append("重生点 (").append(checkpoints.size()).append("个):\n");
             for (int i = 0; i < checkpoints.size(); i++) {
                 info.append("  ").append(i + 1).append(". ").append(checkpoints.get(i).getInfo()).append("\n");
+            }
+            
+            info.append("能量豆 (").append(energyBeans.size()).append("个):\n");
+            for (int i = 0; i < energyBeans.size(); i++) {
+                info.append("  ").append(i + 1).append(". ").append(energyBeans.get(i).getInfo()).append("\n");
             }
             
             return info.toString();
@@ -135,6 +147,22 @@ public class MapDesign {
         }
         
         /**
+         * 添加能量豆
+         */
+        public MapBuilder addEnergyBean(int x, int y) {
+            mapData.energyBeans.add(new EnergyBean(x, y));
+            return this;
+        }
+        
+        /**
+         * 添加能量豆（指定大小）
+         */
+        public MapBuilder addEnergyBean(int x, int y, int size) {
+            mapData.energyBeans.add(new EnergyBean(x, y, size));
+            return this;
+        }
+        
+        /**
          * 构建地图
          */
         public MapData build() {
@@ -162,11 +190,12 @@ public class MapDesign {
      * 获取地图统计信息
      */
     public static String getMapStats(MapData mapData) {
-        return String.format("地图统计: 平台%d个, 实心物块%d个, 尖刺%d个, 重生点%d个, 总计%d个元素", 
+        return String.format("地图统计: 平台%d个, 实心物块%d个, 尖刺%d个, 重生点%d个, 能量豆%d个, 总计%d个元素", 
             mapData.platforms.size(), 
             mapData.solidBlocks.size(), 
             mapData.spikes.size(),
             mapData.checkpoints.size(),
+            mapData.energyBeans.size(),
             mapData.getTotalElementCount());
     }
     

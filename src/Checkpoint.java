@@ -11,6 +11,7 @@ public class Checkpoint extends MapElement {
     private int respawnOffsetX, respawnOffsetY; // 重生点相对于激活框的偏移
     private boolean isActivated; // 是否已激活
     private final boolean defaultActivated; // 是否默认激活
+    private long activationTime; // 激活时间（毫秒）
     
     // 颜色定义
     private static final Color INACTIVE_BOX_COLOR = new Color(128, 128, 128, 100); // 灰色半透明
@@ -36,6 +37,7 @@ public class Checkpoint extends MapElement {
         this.respawnOffsetY = respawnOffsetY;
         this.defaultActivated = defaultActivated;
         this.isActivated = defaultActivated;
+        this.activationTime = defaultActivated ? System.currentTimeMillis() : 0;
     }
     
     /**
@@ -89,6 +91,7 @@ public class Checkpoint extends MapElement {
      */
     public void activate() {
         isActivated = true;
+        activationTime = System.currentTimeMillis();
     }
     
     /**
@@ -117,6 +120,13 @@ public class Checkpoint extends MapElement {
      */
     public boolean isDefaultActivated() {
         return defaultActivated;
+    }
+    
+    /**
+     * 获取激活时间
+     */
+    public long getActivationTime() {
+        return activationTime;
     }
     
     /**

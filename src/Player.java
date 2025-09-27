@@ -24,6 +24,7 @@ public class Player {
     private Platform[] platforms; // 平台数组
     private Spike[] spikes; // 尖刺数组
     private Checkpoint[] checkpoints; // 重生点数组
+    private EnergyBean[] energyBeans; // 能量豆数组
     
     // 死亡和重生相关
     private boolean isDead = false;
@@ -65,6 +66,7 @@ public class Player {
         this.solidBlocks = new SolidBlock[0]; // 初始化为空数组
         this.platforms = new Platform[0]; // 初始化为空数组
         this.spikes = new Spike[0]; // 初始化为空数组
+        this.energyBeans = new EnergyBean[0]; // 初始化为空数组
         this.respawnX = x; // 设置初始重生位置
         this.respawnY = y;
     }
@@ -85,36 +87,37 @@ public class Player {
         this.checkpoints = checkpoints;
     }
     
+    public void setEnergyBeans(EnergyBean[] energyBeans) {
+        this.energyBeans = energyBeans;
+    }
+    
     public void setRespawnPoint(double x, double y) {
         this.respawnX = x;
         this.respawnY = y;
     }
     
     /**
-     * 更新重生点到最近的激活重生点
+     * 更新重生点到时间上最近激活的重生点
      */
     public void updateRespawnToNearestActivated() {
         if (checkpoints == null || checkpoints.length == 0) {
             return;
         }
         
-        Checkpoint nearestCheckpoint = null;
-        double minDistance = Double.MAX_VALUE;
+        Checkpoint latestCheckpoint = null;
+        long latestActivationTime = 0;
         
-        // 寻找离死亡地点最近的激活的重生点
+        // 寻找时间上最近激活的重生点
         for (Checkpoint checkpoint : checkpoints) {
-            if (checkpoint.isActivated()) {
-                double distance = checkpoint.getDistanceTo(deathX, deathY);
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    nearestCheckpoint = checkpoint;
-                }
+            if (checkpoint.isActivated() && checkpoint.getActivationTime() > latestActivationTime) {
+                latestActivationTime = checkpoint.getActivationTime();
+                latestCheckpoint = checkpoint;
             }
         }
         
-        if (nearestCheckpoint != null) {
-            setRespawnPoint(nearestCheckpoint.getRespawnX(), nearestCheckpoint.getRespawnY());
-            System.out.println("更新重生点到最近的激活重生点: (" + nearestCheckpoint.getRespawnX() + ", " + nearestCheckpoint.getRespawnY() + ")");
+        if (latestCheckpoint != null) {
+            setRespawnPoint(latestCheckpoint.getRespawnX(), latestCheckpoint.getRespawnY());
+            System.out.println("更新重生点到时间上最近激活的重生点: (" + latestCheckpoint.getRespawnX() + ", " + latestCheckpoint.getRespawnY() + ")");
         }
     }
     
@@ -238,6 +241,9 @@ public class Player {
         // 尖刺碰撞检测
         checkSpikeCollision();
         
+        // 能量豆碰撞检测
+        checkEnergyBeanCollision();
+        
         // 边界检测
         if (x < 0) x = 0;
         if (x > 1920 - PLAYER_WIDTH) x = 1920 - PLAYER_WIDTH;
@@ -309,6 +315,21 @@ public class Player {
             if (spike.checkCollision(x, y, PLAYER_WIDTH, PLAYER_HEIGHT)) {
                 // 玩家碰到尖刺，死亡
                 die();
+                break;
+            }
+        }
+    }
+    
+    private void checkEnergyBeanCollision() {
+        for (EnergyBean energyBean : energyBeans) {
+            if (energyBean.checkCollision(x, y, PLAYER_WIDTH, PLAYER_HEIGHT)) {
+                // 玩家碰到能量豆，尝试消耗
+                if (energyBean.consume()) {
+                    // 成功消耗能量豆，恢复冲刺数和体力
+                    dashCount = MAX_DASH_COUNT; // 恢复所有冲刺次数
+                    stamina = MAX_STAMINA; // 恢复体力
+                    System.out.println("获得能量豆！冲刺数和体力已恢复！");
+                }
                 break;
             }
         }

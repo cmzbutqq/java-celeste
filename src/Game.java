@@ -25,6 +25,7 @@ public class Game extends JFrame implements KeyListener {
     private Platform[] platforms;
     private Spike[] spikes;
     private Checkpoint[] checkpoints;
+    private EnergyBean[] energyBeans;
     private MapDesign.MapData currentMap;
     
     public Game() {
@@ -40,17 +41,33 @@ public class Game extends JFrame implements KeyListener {
         pack();
         setLocationRelativeTo(null);
         
-        // 初始化游戏对象
-        player = new Player(100, 900);
-        
         // 加载地图设计
         loadMapFromJson("maps/default.json");
+        
+        // 获取初始重生点位置
+        Checkpoint initialCheckpoint = getLatestActivatedCheckpoint();
+        double initialX = 100; // 默认位置
+        double initialY = 900;
+        
+        if (initialCheckpoint != null) {
+            initialX = initialCheckpoint.getRespawnX();
+            initialY = initialCheckpoint.getRespawnY();
+            System.out.println("使用激活的重生点作为初始位置: (" + initialX + ", " + initialY + ")");
+        } else {
+            System.out.println("没有激活的重生点，使用默认初始位置: (" + initialX + ", " + initialY + ")");
+        }
+        
+        // 初始化游戏对象
+        player = new Player(initialX, initialY);
+        
+        // 设置地图元素
         player.setPlatforms(platforms);
         player.setSolidBlocks(solidBlocks);
         player.setSpikes(spikes);
         player.setCheckpoints(checkpoints);
+        player.setEnergyBeans(energyBeans);
         
-        // 设置初始重生点（选择离屏幕中央最近的激活的重生点）
+        // 设置初始重生点（选择时间上最近激活的重生点）
         setInitialRespawnPoint();
         
         // 添加键盘监听
@@ -95,6 +112,9 @@ public class Game extends JFrame implements KeyListener {
     
     private void update(double deltaTime) {
         player.update(deltaTime);
+        
+        // 更新能量豆
+        updateEnergyBeans(deltaTime);
         
         // 检查重生点激活
         checkCheckpointActivation();
@@ -156,6 +176,11 @@ public class Game extends JFrame implements KeyListener {
                 checkpoint.render(g);
             }
             
+            // 绘制能量豆
+            for (EnergyBean energyBean : energyBeans) {
+                energyBean.render(g);
+            }
+            
             // 绘制玩家
             player.render(g);
         }
@@ -178,6 +203,7 @@ public class Game extends JFrame implements KeyListener {
         solidBlocks = mapData.solidBlocks.toArray(new SolidBlock[0]);
         spikes = mapData.spikes.toArray(new Spike[0]);
         checkpoints = mapData.checkpoints.toArray(new Checkpoint[0]);
+        energyBeans = mapData.energyBeans.toArray(new EnergyBean[0]);
         
         // 打印地图统计信息
         System.out.println(MapDesign.getMapStats(mapData));
@@ -195,33 +221,27 @@ public class Game extends JFrame implements KeyListener {
     }
     
     /**
-     * 设置初始重生点（选择离屏幕中央最近的激活的重生点）
+     * 设置初始重生点（选择时间上最近激活的重生点）
      */
     private void setInitialRespawnPoint() {
-        int screenCenterX = WINDOW_WIDTH / 2;
-        int screenCenterY = WINDOW_HEIGHT / 2;
+        Checkpoint latestActivatedCheckpoint = getLatestActivatedCheckpoint();
         
-        Checkpoint nearestActivatedCheckpoint = null;
-        double minDistance = Double.MAX_VALUE;
-        
-        // 寻找离屏幕中央最近的激活的重生点
-        for (Checkpoint checkpoint : checkpoints) {
-            if (checkpoint.isActivated()) {
-                double distance = checkpoint.getDistanceTo(screenCenterX, screenCenterY);
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    nearestActivatedCheckpoint = checkpoint;
-                }
-            }
-        }
-        
-        if (nearestActivatedCheckpoint != null) {
-            player.setRespawnPoint(nearestActivatedCheckpoint.getRespawnX(), nearestActivatedCheckpoint.getRespawnY());
-            System.out.println("设置初始重生点: (" + nearestActivatedCheckpoint.getRespawnX() + ", " + nearestActivatedCheckpoint.getRespawnY() + ")");
+        if (latestActivatedCheckpoint != null) {
+            player.setRespawnPoint(latestActivatedCheckpoint.getRespawnX(), latestActivatedCheckpoint.getRespawnY());
+            System.out.println("设置初始重生点: (" + latestActivatedCheckpoint.getRespawnX() + ", " + latestActivatedCheckpoint.getRespawnY() + ")");
         } else {
             // 如果没有激活的重生点，使用默认位置
             player.setRespawnPoint(100, 900);
             System.out.println("没有激活的重生点，使用默认重生点: (100, 900)");
+        }
+    }
+    
+    /**
+     * 更新能量豆
+     */
+    private void updateEnergyBeans(double deltaTime) {
+        for (EnergyBean energyBean : energyBeans) {
+            energyBean.update(deltaTime);
         }
     }
     
@@ -240,23 +260,20 @@ public class Game extends JFrame implements KeyListener {
     }
     
     /**
-     * 获取离死亡地点最近的激活的重生点
+     * 获取时间上最近激活的重生点
      */
-    public Checkpoint getNearestActivatedCheckpoint(double deathX, double deathY) {
-        Checkpoint nearestCheckpoint = null;
-        double minDistance = Double.MAX_VALUE;
+    public Checkpoint getLatestActivatedCheckpoint() {
+        Checkpoint latestCheckpoint = null;
+        long latestActivationTime = 0;
         
         for (Checkpoint checkpoint : checkpoints) {
-            if (checkpoint.isActivated()) {
-                double distance = checkpoint.getDistanceTo(deathX, deathY);
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    nearestCheckpoint = checkpoint;
-                }
+            if (checkpoint.isActivated() && checkpoint.getActivationTime() > latestActivationTime) {
+                latestActivationTime = checkpoint.getActivationTime();
+                latestCheckpoint = checkpoint;
             }
         }
         
-        return nearestCheckpoint;
+        return latestCheckpoint;
     }
     
 }

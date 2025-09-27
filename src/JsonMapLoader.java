@@ -34,6 +34,9 @@ public class JsonMapLoader {
         
         @JsonProperty("checkpoints")
         public List<CheckpointData> checkpoints;
+        
+        @JsonProperty("energyBeans")
+        public List<ElementData> energyBeans;
     }
     
     /**
@@ -144,6 +147,14 @@ public class JsonMapLoader {
                 builder.addCheckpoint(checkpoint.x, checkpoint.y, checkpoint.width, checkpoint.height,
                                     checkpoint.respawnOffsetX, checkpoint.respawnOffsetY, 
                                     checkpoint.defaultActivated);
+            }
+        }
+        
+        // 添加能量豆
+        if (config.energyBeans != null) {
+            for (ElementData energyBean : config.energyBeans) {
+                // 能量豆只使用x,y坐标，大小固定
+                builder.addEnergyBean(energyBean.x, energyBean.y);
             }
         }
         
