@@ -21,6 +21,7 @@ public class Game extends JFrame implements KeyListener {
     private final GamePanel gamePanel;
     private final Player player;
     private final boolean running = true;
+    private MapElement[] mapElements; // 统一的地图元素数组
     private SolidBlock[] solidBlocks;
     private Platform[] platforms;
     private Spike[] spikes;
@@ -66,6 +67,11 @@ public class Game extends JFrame implements KeyListener {
         player.setSpikes(spikes);
         player.setCheckpoints(checkpoints);
         player.setEnergyBeans(energyBeans);
+        
+        // 设置统一的多态数组
+        if (mapElements != null) {
+            player.setMapElements(mapElements);
+        }
         
         // 设置初始重生点（选择时间上最近激活的重生点）
         setInitialRespawnPoint();
@@ -156,30 +162,8 @@ public class Game extends JFrame implements KeyListener {
             g.setColor(new Color(34, 139, 34)); // 森林绿
             g.fillRect(0, WINDOW_HEIGHT - 50, WINDOW_WIDTH, 50);
             
-            // 绘制平台
-            for (Platform platform : platforms) {
-                platform.render(g);
-            }
-            
-            // 绘制实心物块
-            for (SolidBlock block : solidBlocks) {
-                block.render(g);
-            }
-            
-            // 绘制尖刺
-            for (Spike spike : spikes) {
-                spike.render(g);
-            }
-            
-            // 绘制重生点
-            for (Checkpoint checkpoint : checkpoints) {
-                checkpoint.render(g);
-            }
-            
-            // 绘制能量豆
-            for (EnergyBean energyBean : energyBeans) {
-                energyBean.render(g);
-            }
+            // 使用多态统一渲染所有地图元素
+            renderMapElements(g);
             
             // 绘制玩家
             player.render(g);
@@ -205,8 +189,47 @@ public class Game extends JFrame implements KeyListener {
         checkpoints = mapData.checkpoints.toArray(new Checkpoint[0]);
         energyBeans = mapData.energyBeans.toArray(new EnergyBean[0]);
         
+        // 创建统一的多态数组
+        createUnifiedMapElementsArray();
+        
         // 打印地图统计信息
         System.out.println(MapDesign.getMapStats(mapData));
+    }
+    
+    /**
+     * 创建统一的多态地图元素数组
+     */
+    private void createUnifiedMapElementsArray() {
+        // 计算总元素数量
+        int totalElements = platforms.length + solidBlocks.length + spikes.length + 
+                          checkpoints.length + energyBeans.length;
+        
+        // 创建统一数组
+        mapElements = new MapElement[totalElements];
+        int index = 0;
+        
+        // 添加所有元素到统一数组
+        for (Platform platform : platforms) {
+            mapElements[index++] = platform;
+        }
+        
+        for (SolidBlock block : solidBlocks) {
+            mapElements[index++] = block;
+        }
+        
+        for (Spike spike : spikes) {
+            mapElements[index++] = spike;
+        }
+        
+        for (Checkpoint checkpoint : checkpoints) {
+            mapElements[index++] = checkpoint;
+        }
+        
+        for (EnergyBean energyBean : energyBeans) {
+            mapElements[index++] = energyBean;
+        }
+        
+        System.out.println("创建统一地图元素数组，包含 " + totalElements + " 个元素");
     }
     
     /**
@@ -274,6 +297,40 @@ public class Game extends JFrame implements KeyListener {
         }
         
         return latestCheckpoint;
+    }
+    
+    /**
+     * 使用多态统一渲染所有地图元素
+     * @param g 图形上下文
+     */
+    private void renderMapElements(Graphics g) {
+        if (mapElements != null) {
+            // 使用多态渲染所有地图元素
+            for (MapElement element : mapElements) {
+                element.render(g);
+            }
+        } else {
+            // 回退到原有的分别渲染方式（保持兼容性）
+            for (Platform platform : platforms) {
+                platform.render(g);
+            }
+            
+            for (SolidBlock block : solidBlocks) {
+                block.render(g);
+            }
+            
+            for (Spike spike : spikes) {
+                spike.render(g);
+            }
+            
+            for (Checkpoint checkpoint : checkpoints) {
+                checkpoint.render(g);
+            }
+            
+            for (EnergyBean energyBean : energyBeans) {
+                energyBean.render(g);
+            }
+        }
     }
     
 }

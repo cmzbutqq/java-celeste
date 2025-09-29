@@ -12,6 +12,7 @@ public class Player {
     private static final int PLAYER_HEIGHT = 40;
     private static final double GRAVITY = 0.5;
     private static final double FAST_FALL_GRAVITY = 2.0; // 加速下落时的重力
+    private static final double TERMINAL_VELOCITY = 5.0; // 下落临界速度
     private static final double JUMP_STRENGTH = -12;
     private static final double MOVE_SPEED = 3;
     private static final int GROUND_Y = 1030; // 地面Y坐标 (1080 - 50)
@@ -20,11 +21,12 @@ public class Player {
     private double velocityX, velocityY;
     private boolean onGround;
     private boolean leftPressed, rightPressed, upPressed, downPressed, jumpPressed, dashPressed, climbPressed;
-    private SolidBlock[] solidBlocks; // 实心物块数组
-    private Platform[] platforms; // 平台数组
-    private Spike[] spikes; // 尖刺数组
-    private Checkpoint[] checkpoints; // 重生点数组
-    private EnergyBean[] energyBeans; // 能量豆数组
+    private MapElement[] mapElements; // 统一的地图元素数组
+    private SolidBlock[] solidBlocks; // 实心物块数组（保留用于特定逻辑）
+    private Platform[] platforms; // 平台数组（保留用于特定逻辑）
+    private Spike[] spikes; // 尖刺数组（保留用于特定逻辑）
+    private Checkpoint[] checkpoints; // 重生点数组（保留用于特定逻辑）
+    private EnergyBean[] energyBeans; // 能量豆数组（保留用于特定逻辑）
     
     // 死亡和重生相关
     private boolean isDead = false;
@@ -89,6 +91,14 @@ public class Player {
     
     public void setEnergyBeans(EnergyBean[] energyBeans) {
         this.energyBeans = energyBeans;
+    }
+    
+    /**
+     * 设置统一的地图元素数组
+     * @param mapElements 包含所有地图元素的数组
+     */
+    public void setMapElements(MapElement[] mapElements) {
+        this.mapElements = mapElements;
     }
     
     public void setRespawnPoint(double x, double y) {
@@ -208,6 +218,11 @@ public class Player {
                     // 正常重力
                     velocityY += GRAVITY;
                 }
+                
+                // 限制下落临界速度
+                if (velocityY > TERMINAL_VELOCITY) {
+                    velocityY = TERMINAL_VELOCITY;
+                }
             }
         }
         
@@ -243,6 +258,9 @@ public class Player {
         
         // 能量豆碰撞检测
         checkEnergyBeanCollision();
+        
+        // 统一的多态碰撞检测
+        checkMapElementCollisions();
         
         // 边界检测
         if (x < 0) x = 0;
@@ -331,6 +349,35 @@ public class Player {
                     System.out.println("获得能量豆！冲刺数和体力已恢复！");
                 }
                 break;
+            }
+        }
+    }
+    
+    /**
+     * 统一的多态碰撞检测方法
+     * 使用多态处理所有MapElement子类的碰撞检测
+     */
+    private void checkMapElementCollisions() {
+        if (mapElements == null) return;
+        
+        for (MapElement element : mapElements) {
+            if (element.checkCollision(x, y, PLAYER_WIDTH, PLAYER_HEIGHT)) {
+                // 根据元素类型进行不同的处理
+                if (element instanceof Spike) {
+                    // 尖刺碰撞 - 死亡
+                    die();
+                    break;
+                } else if (element instanceof EnergyBean) {
+                    // 能量豆碰撞 - 尝试消耗
+                    EnergyBean energyBean = (EnergyBean) element;
+                    if (energyBean.consume()) {
+                        dashCount = MAX_DASH_COUNT;
+                        stamina = MAX_STAMINA;
+                        System.out.println("获得能量豆！冲刺数和体力已恢复！");
+                    }
+                    break;
+                }
+                // 其他类型的碰撞检测保持原有逻辑（实心物块、平台等）
             }
         }
     }
